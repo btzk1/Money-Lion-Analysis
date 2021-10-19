@@ -1,0 +1,1617 @@
+= 👨👩 Employee Data Exploration & Analysis
+
+....
+Author: Brandon Tan 
+Date: 10/17/2021
+....
+
+== 📚 Table of Content
+
+__________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+1.  Introduction (Business Problem)
+2.  Project Goals and Objectives
+3.  Project Flow and Sequence +
+4.  Data Preparation
+
+* Removing Constant Feature Column
+
+1.  Data Understanding & Basic Statistics
+
+* Data Accuracy
+* Time Period Recorded for Data
+* Employee Levels Distributions
+* Department Head Counts
+* Cost Center Head Counts
+* Employee Status
+
+1.  EDA (Data Exploration)
+
+* Ratio for Level against Department & Cost Center
+* Level V Department
+* Level Comparison for low & High for each Department
+* Low Level Analytics Department (L1-L4)
+* High Level Anlytics Department (LM5 -LM7)
+* Level V Cost Center
+* Low Level Analytics Cost Center (L1-L4)
+* High Level Analytics Cost Center (LM5 -LM7)
+* Data Analysis (Extracting information from different variables)
+* The most effective way to acquire talent
+* Which Hiring Source attracts what level of employees
+* Hiring Source compare to departments
+
+1.  Key Findings & Suggestions
+2.  Appendix
+
+* Tools and Libraries used
+* Suggestions & Questions ## 👔 Introduction / Business Problem Money
+Lion is one stop shop for all our financial needs. The company has
+recently reached a milestone of going public, while much of the success
+came from their innovation and vision to solve people’s financial needs,
+it is no doubt a strong backend business system is part of the success.
+Today I will be exploring and analysing their employee data which
+reflects the hiring efficiency and employee productivity.
+__________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+
+== 🎯 Project Goals and Objectives
+
+___________________________________________________________________________________________________________________________________________________________________________________________
+The objective is to extract actionable insights that would increase the
+overall efficiency of the hiring process, increse employee productivity
+and to mitigate losses on hiring investments.
+_____________________________________________________________________________________________________________________________________________________________________________________________
+
+=== A. Data Preparation
+
+1.  This project is done both in excel and jupyter notebook(python)
+* Work done in excel includes: sorting / filtering / adding Cost Center
+column / Removing incomplete columns
+* Work Done in python: removing Location column
+2.  For this particular project for we do not remove any rows that has
+the slightest information. Since we do not need to do predictive
+analysis, we are not feeding the data for training hence any information
+retained is valuable for our discovery. However, since location is a
+constant feature, it does not provide any relevant information to our
+analysis, we will remove it.
+3.  Null value datas are wild cards that have weight in either category
+of each unique column
+
+*Import Libraries*
+
+
++*In[34]:*+
+[source, ipython3]
+----
+import pandas as pd 
+import numpy as np 
+import matplotlib.pyplot as plt 
+import seaborn as sns
+import hvplot.pandas
+import hvplot
+import warnings
+----
+
+*Reading CSV File*
+
+
++*In[2]:*+
+[source, ipython3]
+----
+# Reading people ops file
+df = pd.read_csv('People Ops Analyst Test.csv')
+# Display max column
+# pd.set_option('display.max_columns', None)
+# pd.set_option('display.max_rows', None)
+----
+
+*Removing Location Column*
+
+
++*In[3]:*+
+[source, ipython3]
+----
+# Remove Location 
+df.drop(['Location'], axis=1, inplace = True)
+----
+
+
++*In[86]:*+
+[source, ipython3]
+----
+df.head(10)
+----
+
+
++*Out[86]:*+
+----
+[cols=",,,,,,,",options="header",]
+|=======================================================================
+| |Department |Job Title |Hiring Source |Hire Date |Level |Employment
+Status |Cost Center
+|0 |AI Engineering |Chief AI Officer |NaN |7/1/2014 |L8 |Full-Time |AI &
+Data Services
+
+|1 |Information Security Audit |Information Security & Engineering
+Portfolio M... |NaN |7/1/2014 |L4 |Full-Time |Security
+
+|2 |AI Engineering |Chief Engineer |Referral |8/1/2014 |LM6 |Full-Time
+|AI & Data Services
+
+|3 |Data Science |Director of Analytics |NaN |1/12/2015 |LM6 |Full-Time
+|AI & Data Services
+
+|4 |Product Engineering |Lead Software Engineer |Referred |11/23/2015
+|L4 |Full-Time |Engineering
+
+|5 |Product Engineering |Lead Software Engineer |Referred |7/4/2016 |L4
+|Full-Time |Engineering
+
+|6 |Product Engineering |Director of Mobile |Sourced |11/7/2016 |LM5
+|Full-Time |Engineering
+
+|7 |AI Engineering |Application Architect |Referred |12/12/2016 |L4
+|Full-Time |AI & Data Services
+
+|8 |R&D Engineering |Lead R&D Engineer |NaN |6/1/2017 |LM5 |Full-Time
+|AI & Data Services
+
+|9 |Data Science |Senior Data Scientist |NaN |6/19/2017 |L3 |Full-Time
+|AI & Data Services
+|=======================================================================
+----
+
+=== B. Data Understanding and Basic Stats
+
+*1. Data Accuracy*
+
+We want to see if this data sample is accurate and correctly stored. -
+Job Titlle with Levels (the logic assumption here is that a high level
+executive would not be listed as L1/ L2)
+
+We will only sample L1-L2 to see if any high level excutives are
+mistakenly recorded.
+
+
++*In[22]:*+
+[source, ipython3]
+----
+# Checking for data accuracy 
+search_values = ['L1','L2']
+temp_df = df[df.Level.str.contains('|'.join(search_values))]
+temp_df['Job Title'].value_counts()
+----
+
+
++*Out[22]:*+
+----Data Scientist                     12
+Mobile Engineer                     8
+Software Engineer                   6
+Data Engineer                       5
+Automation QA Engineer              4
+Data Analyst                        3
+Mobile Engineer (R&D)               3
+AI Engineer                         3
+HR Executive                        2
+Product Analyst                     2
+Cybersecurity Analyst               2
+Service Desk Analyst                2
+Senior Software Engineer            2
+Talent Acquisition Executive        2
+Software Engineer, R&D              1
+People Ops & Legal Associate        1
+Content Writer                      1
+System Administrator                1
+Senior System Administrator         1
+Application Security Specialist     1
+Marketing Campaign Executive        1
+Security Engineer                   1
+QA Engineer                         1
+Product Designer                    1
+Copywriter                          1
+R&D Engineer                        1
+Product Manager                     1
+Marketing Campaign Analyst          1
+AI DevOps                           1
+Name: Job Title, dtype: int64----
+
+Base on personal logic from the sample tested, there were no high level
+executives that were mistakenly listed under L1 -L2 hence we would
+assume that the data is accurate.
+
+*2. Time Period Recorded for Data*
+
+
++*In[194]:*+
+[source, ipython3]
+----
+df['Hire Date'] =  pd.to_datetime(df['Hire Date'], format= '%m/%d/%Y')
+df.sort_values(by='Hire Date',ascending=True)
+----
+
+
++*Out[194]:*+
+----
+[cols=",,,,,,,",options="header",]
+|=======================================================================
+| |Department |Job Title |Hiring Source |Hire Date |Level |Employment
+Status |Cost Centre
+|92 |Information Security Audit |Information Security & Engineering
+Portfolio M... |NaN |2014-07-01 |L4 |Full-Time |Security
+
+|32 |AI Engineering |Chief AI Officer |NaN |2014-07-01 |L8 |Full-Time
+|AI & Data Services
+
+|31 |AI Engineering |Chief Engineer |Referral |2014-08-01 |LM6
+|Full-Time |AI & Data Services
+
+|89 |Data Science |Director of Analytics |NaN |2015-01-12 |LM6
+|Full-Time |AI & Data Services
+
+|17 |NaN |NaN |NaN |2015-06-08 |NaN |Contractor |NaN
+
+|16 |NaN |NaN |NaN |2015-11-02 |NaN |Contractor |NaN
+
+|200 |Product Engineering |Lead Software Engineer |Referred |2015-11-23
+|L4 |Full-Time |Engineering
+
+|199 |Product Engineering |Lead Software Engineer |Referred |2016-07-04
+|L4 |Full-Time |Engineering
+
+|198 |Product Engineering |Director of Mobile |Sourced |2016-11-07 |LM5
+|Full-Time |Engineering
+
+|30 |AI Engineering |Application Architect |Referred |2016-12-12 |L4
+|Full-Time |AI & Data Services
+
+|15 |NaN |NaN |NaN |2017-03-21 |NaN |Contractor |NaN
+
+|210 |R&D Engineering |Lead R&D Engineer |NaN |2017-06-01 |LM5
+|Full-Time |AI & Data Services
+
+|88 |Data Science |Senior Data Scientist |NaN |2017-06-19 |L3 |Full-Time
+|AI & Data Services
+
+|29 |AI Engineering |Director of Infrastructure & Security |Applied
+|2017-07-03 |L4 |Full-Time |AI & Data Services
+
+|132 |Product |Director of Product |Applied |2017-08-01 |LM5 |Full-Time
+|Engineering
+
+|131 |Product |Director of Product |Applied |2017-09-04 |LM5 |Full-Time
+|Engineering
+
+|41 |AI Service Delivery |Senior AI PM |Referred |2017-11-01 |L3
+|Full-Time |AI & Data Services
+
+|197 |Product Engineering |Senior Software Engineer |NaN |2017-11-06 |L3
+|Full-Time |Engineering
+
+|60 |Data Engineering |Data Engineering Lead |Sourced |2017-12-04 |LM5
+|Full-Time |AI & Data Services
+
+|87 |Data Science |Data Scientist |NaN |2018-01-15 |L2 |Full-Time |AI &
+Data Services
+
+|196 |Product Engineering |Software Engineer |NaN |2018-01-15 |L2
+|Full-Time |Engineering
+
+|195 |Product Engineering |Software Engineer |NaN |2018-02-01 |L2
+|Full-Time |Engineering
+
+|86 |Data Science |Visiting Academic |NaN |2018-02-01 |NaN |Contractor
+|AI & Data Services
+
+|194 |Product Engineering |Lead Software Engineer |NaN |2018-02-20 |L4
+|Full-Time |Engineering
+
+|85 |Data Science |Research Scientist |NaN |2018-03-01 |L2 |Full-Time
+|AI & Data Services
+
+|193 |Product Engineering |Software QA Manager |Referred |2018-03-05 |L4
+|Full-Time |Engineering
+
+|28 |AI Engineering |AI Engineer |Sourced |2018-04-02 |L3 |Full-Time |AI
+& Data Services
+
+|130 |Product |Senior Product Designer |NaN |2018-04-16 |L3 |Full-Time
+|Engineering
+
+|191 |Product Engineering |Senior Software Engineer |NaN |2018-05-04 |L3
+|Full-Time |Engineering
+
+|192 |Product Engineering |Software Engineer |NaN |2018-05-04 |L2
+|Full-Time |Engineering
+
+|27 |AI Engineering |Lead Software Engineer |Referred |2018-05-14 |L4
+|Full-Time |AI & Data Services
+
+|129 |Product |Senior Product Manager |Referred |2018-06-04 |L4
+|Full-Time |Engineering
+
+|190 |Product Engineering |QA Engineer |NaN |2018-06-18 |L2 |Full-Time
+|Engineering
+
+|26 |AI Engineering |AI Engineer |Sourced |2018-07-02 |L3 |Full-Time |AI
+& Data Services
+
+|128 |Product |Product Manager |NaN |2018-07-02 |L2 |Full-Time
+|Engineering
+
+|84 |Data Science |Senior Data Scientist |NaN |2018-07-09 |L3 |Full-Time
+|AI & Data Services
+
+|127 |Product |Content Writer |Sourced |2018-07-09 |L2 |Full-Time
+|Engineering
+
+|83 |Data Science |Data Scientist |NaN |2018-07-16 |L1 |Full-Time |AI &
+Data Services
+
+|51 |Cybersecurity |Application Security Specialist |NaN |2018-08-01 |L2
+|Full-Time |Security
+
+|82 |Data Science |Data Scientist |NaN |2018-09-03 |L1 |Full-Time |AI &
+Data Services
+
+|114 |People Ops |Talent Acquisition Executive |Jobstreet |2018-09-11
+|L1 |Full-Time |Office Management
+
+|189 |Product Engineering |Senior QA Engineer |NaN |2018-10-01 |L2
+|Full-Time |Engineering
+
+|126 |Product |Senior Product Manager |NaN |2018-10-01 |L3 |Full-Time
+|Engineering
+
+|188 |Product Engineering |Lead Software Engineer |NaN |2018-10-08 |L4
+|Full-Time |Engineering
+
+|59 |Data Engineering |Data Engineer |NaN |2018-10-08 |L3 |Full-Time |AI
+& Data Services
+
+|98 |Information Technology Services |Lead, Workplace Technology |NaN
+|2018-10-10 |L4 |Full-Time |Security
+
+|187 |Product Engineering |Software Engineer |Applied |2018-10-15 |L2
+|Full-Time |Engineering
+
+|58 |Data Engineering |Data Engineer |NaN |2018-10-15 |L3 |Full-Time |AI
+& Data Services
+
+|40 |AI Service Delivery |AI Product Manager |NaN |2018-11-05 |L2
+|Full-Time |AI & Data Services
+
+|185 |Product Engineering |Software Engineer |NaN |2018-11-05 |L2
+|Full-Time |Engineering
+
+|186 |Product Engineering |Lead, Site Reliability Engineer |Referral
+|2018-11-05 |L4 |Full-Time |Engineering
+
+|125 |Product |Senior Product Manager |Sourced |2018-11-19 |L3
+|Full-Time |Engineering
+
+|209 |R&D Engineering |R&D Engineer |NaN |2018-11-19 |L2 |Full-Time |AI
+& Data Services
+
+|90 |Finance |Account Manager cum Payroll |Referral |2018-12-03 |L3
+|Full-Time |Office Management
+
+|124 |Product |Product Analyst |NaN |2018-12-03 |L1 |Full-Time
+|Engineering
+
+|184 |Product Engineering |Senior Software Engineer |NaN |2018-12-03 |L2
+|Full-Time |Engineering
+
+|50 |Cybersecurity |Head of Cybersecurity |NaN |2019-01-02 |LM6
+|Full-Time |Security
+
+|183 |Product Engineering |Software Engineer |Referral |2019-01-02 |L2
+|Full-Time |Engineering
+
+|113 |People Ops |HR Executive |Referral |2019-01-07 |L2 |Full-Time
+|Office Management
+
+|111 |People Ops |Talent Acquisition Executive |Job Portal |2019-01-14
+|L2 |Full-Time |Office Management
+
+|91 |Information Security Audit |Information Security Analyst |NaN
+|2019-01-14 |L2 |Full-Time |Security
+
+|81 |Data Science |Associate Data Scientist |NaN |2019-01-14 |L1
+|Full-Time |AI & Data Services
+
+|112 |People Ops |People Ops & Legal Associate |Referral |2019-01-14 |L2
+|Full-Time |Office Management
+
+|182 |Product Engineering |Software Engineer |NaN |2019-01-14 |L2
+|Full-Time |Engineering
+
+|49 |Cybersecurity |Security Engineer |NaN |2019-01-28 |L2 |Full-Time
+|Security
+
+|181 |Product Engineering |Lead Software Engineer |NaN |2019-01-28 |L4
+|Full-Time |Engineering
+
+|14 |NaN |NaN |NaN |2019-01-30 |NaN |Contractor |NaN
+
+|180 |Product Engineering |Software Engineer |Applied |2019-02-01 |L2
+|Full-Time |Engineering
+
+|123 |Product |Product Manager |Referred |2019-02-11 |L3 |Full-Time
+|Engineering
+
+|179 |Product Engineering |Software Engineer |NaN |2019-02-11 |L2
+|Full-Time |Engineering
+
+|48 |Cybersecurity |Cybersecurity Analyst |NaN |2019-02-11 |L1
+|Full-Time |Security
+
+|39 |AI Service Delivery |Senior VP - AI |Referral |2019-02-14 |LM7
+|Full-Time |AI & Data Services
+
+|25 |AI Engineering |AI Engineer |NaN |2019-02-18 |L2 |Full-Time |AI &
+Data Services
+
+|208 |R&D Engineering |Senior R&D Engineer |NaN |2019-02-18 |L3
+|Full-Time |AI & Data Services
+
+|178 |Product Engineering |Senior Software Engineer |Sourced |2019-03-01
+|L3 |Full-Time |Engineering
+
+|177 |Product Engineering |Software Engineer |inbound |2019-03-01 |L2
+|Full-Time |Engineering
+
+|110 |People Ops |HR Executive |Referral |2019-03-11 |L2 |Full-Time
+|Office Management
+
+|176 |Product Engineering |SRE level II |Referral |2019-03-18 |L3
+|Full-Time |Engineering
+
+|175 |Product Engineering |Lead Software Engineer |Referred |2019-03-25
+|L4 |Full-Time |Engineering
+
+|38 |AI Service Delivery |AI Product Manager |NaN |2019-04-01 |L3
+|Full-Time |AI & Data Services
+
+|109 |People Ops |Director of Finance & HR |Referral |2019-04-08 |LM5
+|Full-Time |Office Management
+
+|13 |NaN |NaN |NaN |2019-04-22 |NaN |Contractor |NaN
+
+|97 |Information Technology Services |Lead, IT Service Management
+|JobStreet |2019-05-06 |L4 |Full-Time |Security
+
+|174 |Product Engineering |Senior Software Engineer |Referral
+|2019-05-06 |L3 |Full-Time |Engineering
+
+|47 |Cybersecurity |CSIRT Manager |Referral |2019-05-27 |L3 |Full-Time
+|Security
+
+|46 |Cybersecurity |Application Security Specialist |Referral
+|2019-06-06 |L2 |Full-Time |Security
+
+|24 |AI Engineering |Senior AI DevOps |Referred |2019-06-10 |L4
+|Full-Time |AI & Data Services
+
+|173 |Product Engineering |Senior Software Engineer |NaN |2019-06-10 |L3
+|Full-Time |Engineering
+
+|45 |Cybersecurity |Principal Cybersecurity Engineer |Referral
+|2019-06-10 |L4 |Full-Time |Security
+
+|23 |AI Engineering |AI DevOps |Referred |2019-06-17 |L2 |Full-Time |AI
+& Data Services
+
+|172 |Product Engineering |QA Engineer |Applied |2019-07-15 |L2
+|Full-Time |Engineering
+
+|171 |Product Engineering |Automation QA Engineer |Referred |2019-08-13
+|L3 |Full-Time |Engineering
+
+|12 |NaN |Domestic helper |NaN |2019-09-24 |NaN |Contractor |NaN
+
+|11 |NaN |NaN |NaN |2019-10-07 |NaN |Contractor |NaN
+
+|80 |Data Science |Data Scientist |Source |2019-10-21 |L1 |Full-Time |AI
+& Data Services
+
+|170 |Product Engineering |Automation QA Engineer |Referred |2019-11-04
+|L2 |Full-Time |Engineering
+
+|10 |NaN |NaN |NaN |2019-11-08 |NaN |Contractor |NaN
+
+|9 |NaN |NaN |NaN |2019-11-11 |NaN |Contractor |NaN
+
+|122 |Product |Product Manager |Referral |2019-11-18 |L3 |Full-Time
+|Engineering
+
+|96 |Information Technology Services |System Administrator |Referral
+|2019-12-16 |L1 |Full-Time |Security
+
+|105 |Marketing Analytics |Marketing Analytics Manager |Sourced
+|2020-01-02 |L3 |Full-Time |AI & Data Services
+
+|104 |Marketing Analytics |Senior Data Analyst |NaN |2020-01-06 |L3
+|Full-Time |AI & Data Services
+
+|79 |Data Science |Data Scientist |Sourced |2020-02-03 |L1 |Full-Time
+|AI & Data Services
+
+|121 |Product |Product Manager |Referral |2020-02-03 |L3 |Full-Time
+|Engineering
+
+|108 |People Ops |Senior HR associate |NaN |2020-02-10 |L3 |Full-Time
+|Office Management
+
+|95 |Information Technology Services |Service Desk Analyst |Applied
+|2020-02-24 |L1 |Full-Time |Security
+
+|169 |Product Engineering |Mobile Engineer |Sourced |2020-03-09 |L2
+|Full-Time |Engineering
+
+|94 |Information Technology Services |Senior System Administrator
+|Applied |2020-04-01 |L2 |Full-Time |Security
+
+|168 |Product Engineering |Mobile Engineer |Referral |2020-05-04 |L1
+|Full-Time |Engineering
+
+|167 |Product Engineering |Mobile Engineer |Referral |2020-05-04 |L1
+|Full-Time |Engineering
+
+|78 |Data Science |Data Scientist |Applied |2020-05-04 |L1 |Full-Time
+|AI & Data Services
+
+|37 |AI Service Delivery |AI Product Manager |NaN |2020-05-20 |L2
+|Full-Time |AI & Data Services
+
+|166 |Product Engineering |Automation QA Engineer |Sourced |2020-06-09
+|L2 |Full-Time |Engineering
+
+|44 |Cybersecurity |Cybersecurity Analyst |Applied |2020-06-15 |L2
+|Full-Time |Security
+
+|165 |Product Engineering |Junior Site Reliability Engineer |NaN
+|2020-07-01 |L1 |Full-Time |Engineering
+
+|164 |Product Engineering |Mobile Engineer |Sourced |2020-07-01 |L2
+|Full-Time |Engineering
+
+|119 |Product |Product Analyst |Applied |2020-08-10 |L1 |Full-Time
+|Engineering
+
+|120 |Product |Product Manager |Referred |2020-08-10 |L2 |Full-Time
+|Engineering
+
+|118 |Product |Product Analyst |Applied |2020-09-01 |L2 |Full-Time
+|Engineering
+
+|77 |Data Science |Data Scientist |Applied |2020-09-14 |L1 |Full-Time
+|AI & Data Services
+
+|163 |Product Engineering |Automation QA Engineer |Applied |2020-09-14
+|L3 |Full-Time |Engineering
+
+|162 |Product Engineering |Automation QA Engineer |Applied |2020-09-14
+|L2 |Full-Time |Engineering
+
+|161 |Product Engineering |Automation QA Engineer |Sourced |2020-09-21
+|L2 |Full-Time |Engineering
+
+|76 |Data Science |Data Scientist |Applied |2020-09-21 |L2 |Full-Time
+|AI & Data Services
+
+|74 |Data Science |Senior Data Scientist |Applied |2020-10-05 |L3
+|Full-Time |AI & Data Services
+
+|103 |Marketing Analytics |Data Analyst |Referral |2020-10-05 |L1
+|Full-Time |AI & Data Services
+
+|75 |Data Science |Data Scientist |Applied |2020-10-05 |L1 |Full-Time
+|AI & Data Services
+
+|160 |Product Engineering |Software Engineer |NaN |2020-10-05 |L2
+|Full-Time |Engineering
+
+|57 |Data Engineering |Data Engineer |NaN |2020-10-12 |L2 |Full-Time |AI
+& Data Services
+
+|73 |Data Science |Data Scientist |Applied |2020-10-19 |L1 |Full-Time
+|AI & Data Services
+
+|36 |AI Service Delivery |Senior AI PM |NaN |2020-11-09 |L3 |Full-Time
+|AI & Data Services
+
+|158 |Product Engineering |Mobile Engineer |Applied |2020-12-07 |L1
+|Full-Time |Engineering
+
+|159 |Product Engineering |Lead Software Engineer |Sourced |2020-12-07
+|L4 |Full-Time |Engineering
+
+|207 |R&D Engineering |Mobile Engineer (R&D) |Referral |2021-01-04 |L1
+|Full-Time |AI & Data Services
+
+|72 |Data Science |Data Scientist |Applied |2021-01-04 |L1 |Full-Time
+|AI & Data Services
+
+|71 |Data Science |Data Scientist |Applied |2021-01-11 |L1 |Full-Time
+|AI & Data Services
+
+|56 |Data Engineering |Data Engineer |Sourced |2021-01-18 |L2 |Full-Time
+|AI & Data Services
+
+|43 |Cybersecurity |Cybersecurity Analyst |Sourced |2021-02-15 |L1
+|Full-Time |Security
+
+|206 |R&D Engineering |R&D Engineer |Referral |2021-02-15 |L1 |Full-Time
+|AI & Data Services
+
+|35 |AI Service Delivery |Head AI Strategy |NaN |2021-02-15 |LM5
+|Probation |AI & Data Services
+
+|157 |Product Engineering |Mobile Engineer |Sourced |2021-02-22 |L1
+|Full-Time |Engineering
+
+|156 |Product Engineering |Director of Engineering |NaN |2021-03-01 |LM5
+|Probation |Engineering
+
+|22 |AI Engineering |AI Engineer |Applied |2021-03-01 |L1 |Probation |AI
+& Data Services
+
+|93 |Information Technology Services |Service Desk Analyst |Applied
+|2021-03-01 |L2 |Extended Probation |Security
+
+|102 |Marketing Analytics |Digital Graphic Designer |NaN |2021-03-01 |L2
+|Full-Time |AI & Data Services
+
+|101 |Marketing Analytics |Marketing Campaign Executive |Referral
+|2021-03-08 |L2 |Full-Time |AI & Data Services
+
+|21 |AI Engineering |AI Engineer |Applied |2021-03-08 |L2 |Full-Time |AI
+& Data Services
+
+|205 |R&D Engineering |Mobile Engineer (R&D) |Referral |2021-03-15 |L1
+|Full-Time |AI & Data Services
+
+|154 |Product Engineering |Software Engineer |Applied |2021-03-15 |L2
+|Full-Time |Engineering
+
+|155 |Product Engineering |Software Engineer |Sourced |2021-03-15 |L2
+|Probation |Engineering
+
+|70 |Data Science |Data Scientist |Applied |2021-03-15 |L1 |Full-Time
+|AI & Data Services
+
+|153 |Product Engineering |Senior Software Engineer |NaN |2021-04-01 |L3
+|Probation |Engineering
+
+|69 |Data Science |Research Intern (Part-timer) |NaN |2021-04-01 |NaN
+|Contractor |AI & Data Services
+
+|68 |Data Science |Research Intern (Part-timer) |Referral |2021-04-01
+|NaN |Contractor |AI & Data Services
+
+|204 |R&D Engineering |Software Engineer, R&D |Internal |2021-04-01 |L2
+|Probation |AI & Data Services
+
+|20 |AI Engineering |AI Engineer |NaN |2021-04-05 |L2 |Probation |AI &
+Data Services
+
+|152 |Product Engineering |Software Engineer |Referral |2021-04-05 |NaN
+|Probation |Engineering
+
+|100 |Marketing Analytics |Marketing Campaign Analyst |Applied
+|2021-04-05 |L1 |Probation |AI & Data Services
+
+|67 |Data Science |Data Scientist |Applied |2021-04-05 |L1 |Probation
+|AI & Data Services
+
+|203 |R&D Engineering |Mobile Engineer (R&D) |Referral |2021-04-05 |L1
+|Probation |AI & Data Services
+
+|107 |People Ops |People Ops intern |Applied |2021-04-05 |L0 |Internship
+|Office Management
+
+|151 |Product Engineering |Software Engineer |NaN |2021-04-19 |NaN
+|Probation |Engineering
+
+|202 |R&D Engineering |Senior PM, R&D |Referral |2021-04-19 |L4
+|Probation |AI & Data Services
+
+|34 |AI Service Delivery |Agile Coach |inbound |2021-05-03 |L4
+|Probation |AI & Data Services
+
+|55 |Data Engineering |Data Engineer |Applied |2021-05-10 |L1 |Probation
+|AI & Data Services
+
+|66 |Data Science |Data Scientist |Referral |2021-05-10 |L1 |Probation
+|AI & Data Services
+
+|150 |Product Engineering |Mobile Engineer |Referral |2021-05-10 |NaN
+|Probation |Engineering
+
+|65 |Data Science |Data Analyst |Applied |2021-05-10 |L1 |Probation |AI
+& Data Services
+
+|106 |People Ops |NaN |NaN |2021-05-10 |NaN |Internship |Office
+Management
+
+|148 |Product Engineering |Senior Frontend Software Engineer |Applied
+|2021-05-19 |L3 |Probation |Engineering
+
+|147 |Product Engineering |Senior Software Engineer |Sourced |2021-05-19
+|L3 |Probation |Engineering
+
+|146 |Product Engineering |Mobile Engineer |Applied |2021-05-19 |L1
+|Probation |Engineering
+
+|42 |Cybersecurity |Security Engineer |Sourced |2021-05-19 |L1
+|Probation |Security
+
+|145 |Product Engineering |Mobile Engineer |Applied |2021-05-19 |L1
+|Probation |Engineering
+
+|149 |Product Engineering |Senior Frontend Software Engineer |NaN
+|2021-05-19 |L2 |Probation |Engineering
+
+|99 |Marketing Analytics |Copywriter |Sourced |2021-05-19 |L1 |Probation
+|AI & Data Services
+
+|142 |Product Engineering |Senior Software Engineer |NaN |2021-06-01 |L3
+|Probation |Engineering
+
+|143 |Product Engineering |Mobile Engineer |Referral |2021-06-01 |NaN
+|Probation |Engineering
+
+|144 |Product Engineering |Senior Software Engineer |NaN |2021-06-01 |L3
+|Probation |Engineering
+
+|141 |Product Engineering |Senior Software Engineer |Applied |2021-06-01
+|L2 |Probation |Engineering
+
+|117 |Product |Product Manager |Referral |2021-06-01 |L3 |Probation
+|Engineering
+
+|33 |AI Service Delivery |Product Manager, R&D |NaN |2021-06-01 |L2
+|Probation |AI & Data Services
+
+|54 |Data Engineering |Data Engineer |Applied |2021-06-08 |L1 |Probation
+|AI & Data Services
+
+|64 |Data Science |Data Analyst |Applied |2021-06-08 |L1 |Probation |AI
+& Data Services
+
+|19 |AI Engineering |Lead AI Engineer |Sourced |2021-06-08 |L4
+|Probation |AI & Data Services
+
+|140 |Product Engineering |Senior Software Engineer |Agency |2021-06-08
+|L3 |Probation |Engineering
+
+|201 |R&D Engineering |Lead R&D Engineer |Applied |2021-06-14 |L4
+|Probation |AI & Data Services
+
+|139 |Product Engineering |Senior Software Engineer |Applied |2021-06-14
+|L2 |Probation |Engineering
+
+|116 |Product |Product Designer |Applied |2021-06-28 |L2 |Probation
+|Engineering
+
+|7 |NaN |NaN |NaN |2021-07-05 |NaN |NaN |NaN
+
+|8 |NaN |NaN |NaN |2021-07-05 |NaN |NaN |NaN
+
+|18 |AI Engineering |AI Engineer |Sourced |2021-07-05 |L2 |Probation |AI
+& Data Services
+
+|52 |Data Engineering |Data Engineer |Applied |2021-07-05 |L2 |Probation
+|AI & Data Services
+
+|53 |Data Engineering |Data Engineer |Referred |2021-07-05 |L1
+|Probation |AI & Data Services
+
+|138 |Product Engineering |Senior Software Engineer |NaN |2021-07-05
+|NaN |Full-Time |Engineering
+
+|137 |Product Engineering |Senior Software Engineer |NaN |2021-07-05
+|NaN |NaN |Engineering
+
+|63 |Data Science |Data Analyst |Applied |2021-07-05 |NaN |Probation |AI
+& Data Services
+
+|62 |Data Science |Data Scientist |NaN |2021-07-05 |NaN |Probation |AI &
+Data Services
+
+|6 |NaN |NaN |NaN |2021-07-12 |L3 |NaN |NaN
+
+|135 |Product Engineering |Senior Software Engineer |NaN |2021-07-12
+|NaN |NaN |Engineering
+
+|136 |Product Engineering |Junior Site Reliability Engineer |Applied
+|2021-07-12 |NaN |Probation |Engineering
+
+|5 |NaN |NaN |Applied |2021-07-12 |L3 |NaN |NaN
+
+|4 |NaN |NaN |NaN |2021-07-19 |NaN |NaN |NaN
+
+|3 |NaN |NaN |NaN |2021-07-19 |NaN |NaN |NaN
+
+|2 |NaN |NaN |Applied |2021-08-02 |L3 |NaN |NaN
+
+|115 |Product |Product Manager |Applied |2021-08-02 |L3 |Probation
+|Engineering
+
+|134 |Product Engineering |Senior Software Engineer |NaN |2021-08-09
+|NaN |NaN |Engineering
+
+|1 |NaN |NaN |NaN |2021-08-23 |NaN |NaN |NaN
+
+|61 |Data Science |Data Scientist (Intern) |NaN |2021-09-06 |NaN
+|Internship |AI & Data Services
+
+|133 |Product Engineering |Senior Software Engineer |NaN |2021-09-06
+|NaN |NaN |Engineering
+
+|0 |NaN |NaN |NaN |2021-10-04 |NaN |NaN |NaN
+|=======================================================================
+----
+
+Data contains information from year 2014 – 2021
+
+*Hiring Trend Overtime*
+
+
++*In[122]:*+
+[source, ipython3]
+----
+df['Hire Date'] = pd.to_datetime(df['Hire Date'])
+df.plot()
+----
+
+
++*Out[122]:*+
+----<matplotlib.axes._subplots.AxesSubplot at 0x2227c6a46c8>
+![png](output_17_1.png)
+----
+
+The Hiring rate has increased dramatically starting from year 2018 -
+2021
+
+*3. Level- We want to see if the compay consist of all levels of people*
+
+
++*In[4]:*+
+[source, ipython3]
+----
+# Create a duplicated dataframe for analysis 
+df_copy = df
+df_copy = df_copy.loc[~df_copy['Level'].str.contains('nan',na=False)]
+df_copy['Level'].value_counts().hvplot.bar(
+    title="Level Counts", xlabel='Levels', ylabel='Count', 
+    width=500, height=350)
+
+----
+
+
++*Out[4]:*+
+----
+[[1002]]
+[[8f7986e1-8361-4bdd-bc93-6118d009da9f]]
+----
+
+Visualizing the data we can see that the data does not have employees of
+level L5, L6, and L7 (Individual Contributor). This would mean that the
+talent could be further motivated to achieve greater heights where they
+can transcend to a L5/L6/L7 employee. Understanding this, the next step
+is to think about how to create an environment / path that would
+inspired people to think out of the box.
+
+We can also see that there is one anomaly which is L8 and its not
+classified under the leveling framework which is the Chief AI Officer.
+
+*4. Department- Which department hires the most people*
+
+
++*In[5]:*+
+[source, ipython3]
+----
+# Visualizing data
+df_copy['Department'].value_counts().hvplot.barh(
+    title="Department Hire Counts", xlabel='Departments', ylabel='Count', 
+    width=500, height=350)
+----
+
+
++*Out[5]:*+
+----
+[[1123]]
+[[b048cd57-ef26-409f-98f3-0376be65d2d3]]
+----
+
+As a whole Product Engineers are hired the most. This shows where the
+company’s emphasis and vision is on, making sure the application/
+platform is properly configured for consumers.
+
+*5. Cost Centers- Which cost center has the most head counts?*
+
+
++*In[6]:*+
+[source, ipython3]
+----
+df_copy['Cost Center'].value_counts().hvplot.bar(
+    title="Cost Center Head Counts", xlabel='Cost Center', ylabel='Count', 
+    width=500, height=350)
+----
+
+
++*Out[6]:*+
+----
+[[1244]]
+[[9fb2b973-1392-4ef3-8b71-615d47e342c4]]
+----
+
+*6. Employment Status*
+
+
++*In[7]:*+
+[source, ipython3]
+----
+df_copy['Employment Status'].value_counts().hvplot.area(
+    title="Department Hire Counts", xlabel='Departments', ylabel='Count', 
+    width=500, height=350).opts(bgcolor='#fbecc4')
+----
+
+
++*Out[7]:*+
+----
+[[1365]]
+[[0ab2681a-1e6f-4e60-80b2-b9ec549cb3a0]]
+----
+
+Most of the employees are hired fulltime and very few are on a
+contractual basis. While having a lot of fulltimers is great when there
+is a lot of work to be done, an important factor to consider is whether
+it increases the productivity and worth the ROI.
+
+=== C. Exploratory Data Analysis
+
+*1. Ratio for Level against Department & Cost Center*
+
+To compare the distribution of Levels between Department and Cost
+Centers we split it to two groups: - low_level (L1 - L4) - high_level
+(LM5 - LM7)
+
+*i) Level v Department*
+
+
++*In[9]:*+
+[source, ipython3]
+----
+# Copy data file
+df_1 = df
+# Remove Hiring Source 
+df_1.drop(['Hiring Source'], axis=1, inplace = True)
+# Drop Na from data after Hiring Source is removed to remove empty 'level' columns
+df_1 = df_1.dropna()
+----
+
+
++*In[10]:*+
+[source, ipython3]
+----
+# Creat a new dataframe with the counted values for each level to department 
+lvd_df = pd.DataFrame({'Count' : df_1.groupby( ["Department", "Level"] ).size()}).reset_index()
+lvd_df.hvplot.table(columns=['Department', 'Level','Count'], sortable=True, selectable=True,
+                  width=800, height=400)
+----
+
+
++*Out[10]:*+
+----
+[[1486]]
+[[6e4f32ef-98d1-4f7b-a0ef-cd1436f6d4a1]]
+----
+
+Splitting the Data between two groups (L1-l4) & (LM5 - LM7), namely
+low_level_df & high_level_df
+
+
++*In[11]:*+
+[source, ipython3]
+----
+search_values_low = ['L0','L1','L2','L3','L4']
+low_level_df = lvd_df[lvd_df.Level.str.contains('|'.join(search_values_low))]
+----
+
+
++*In[12]:*+
+[source, ipython3]
+----
+search_values_high = ['LM5','LM6','LM7']
+high_level_df = lvd_df[lvd_df.Level.str.contains('|'.join(search_values_high))]
+----
+Ratio between the two groups 
+
++*In[13]:*+
+[source, ipython3]
+----
+def calculate_ratio(x,y,z): 
+    low_sum = x['Count'].sum()
+    high_sum = y['Count'].sum()
+    total_sum = z['Count'].sum()
+    low_ratio = round((low_sum / total_sum)*100,2)
+    high_ratio = round((high_sum / total_sum)*100,2)
+    print('Low Level Percentage:',low_ratio)
+    print('High Level Percentage:', high_ratio)
+calculate_ratio(low_level_df,high_level_df,lvd_df)
+----
+
+
++*Out[13]:*+
+----
+Low Level Percentage: 92.05
+High Level Percentage: 6.82
+----
+
+About 92.05% of employess belong in the lower level group as compared
+6.82% in the upper level.
+
+*ii) Level comparison for low and high for each Department*
+
+
++*In[38]:*+
+[source, ipython3]
+----
+# We first take a look at all the departments available
+lvd_df['Department'].unique()
+----
+
+
++*Out[38]:*+
+----array(['AI Engineering', 'AI Service Delivery', 'Cybersecurity',
+       'Data Engineering', 'Data Science', 'Finance',
+       'Information Security Audit', 'Information Technology Services',
+       'Marketing Analytics', 'People Ops', 'Product',
+       'Product Engineering', 'R&D Engineering'], dtype=object)----
+
+
++*In[14]:*+
+[source, ipython3]
+----
+# Write a function for the comparison 
+def low_high_comparison(x,low,high,value): 
+    search_values = [x]
+    low_df = low[low[value].str.contains('|'.join(search_values))]
+    low_com = low_df['Count'].sum()
+    high_df = high[high[value].str.contains('|'.join(search_values))]
+    high_com = high_df['Count'].sum()
+    total_com = low_com + high_com
+    low_level_perc = round((low_com / total_com)* 100,2)
+    high_level_perc = round((high_com / total_com)* 100,2)
+    print('%s Low Level Percentage:'%x,low_level_perc)
+    print('%s High Level Percentage:'%x,high_level_perc)
+    print('===========================================')
+----
+
+
++*In[22]:*+
+[source, ipython3]
+----
+for x in lvd_df['Department'].unique():
+    low_high_comparison(x,low_level_df,high_level_df,'Department')
+----
+
+
++*Out[22]:*+
+----
+AI Engineering Low Level Percentage: 92.86
+AI Engineering High Level Percentage: 7.14
+===========================================
+AI Service Delivery Low Level Percentage: 77.78
+AI Service Delivery High Level Percentage: 22.22
+===========================================
+Cybersecurity Low Level Percentage: 90.0
+Cybersecurity High Level Percentage: 10.0
+===========================================
+Data Engineering Low Level Percentage: 88.89
+Data Engineering High Level Percentage: 11.11
+===========================================
+Data Science Low Level Percentage: 95.65
+Data Science High Level Percentage: 4.35
+===========================================
+Finance Low Level Percentage: 100.0
+Finance High Level Percentage: 0.0
+===========================================
+Information Security Audit Low Level Percentage: 100.0
+Information Security Audit High Level Percentage: 0.0
+===========================================
+Information Technology Services Low Level Percentage: 100.0
+Information Technology Services High Level Percentage: 0.0
+===========================================
+Marketing Analytics Low Level Percentage: 100.0
+Marketing Analytics High Level Percentage: 0.0
+===========================================
+People Ops Low Level Percentage: 87.5
+People Ops High Level Percentage: 12.5
+===========================================
+Product Low Level Percentage: 94.74
+Product High Level Percentage: 5.26
+===========================================
+Product Engineering Low Level Percentage: 96.55
+Product Engineering High Level Percentage: 3.45
+===========================================
+R&D Engineering Low Level Percentage: 90.0
+R&D Engineering High Level Percentage: 10.0
+===========================================
+----
+
+Most low level departments are above the 85 percentile except for AI
+Service Delivery.
+
+*iii) Low Level Analysis (L1-L4)*
+
+
++*In[13]:*+
+[source, ipython3]
+----
+low_level_df.hvplot.table(columns=['Department', 'Level','Count'], sortable=True, selectable=True,
+                  width=800, height=400)
+----
+
+
++*Out[13]:*+
+----
+[[1524]]
+[[d0809fdd-d2f8-4e49-a593-1219d93828c7]]
+----
+
+From the table above we can sort `Level/Department/Count' by clickng on
+it to see the distribution and amount of employees in Department v
+Levels.
+
+
++*In[14]:*+
+[source, ipython3]
+----
+# Create new Dataframe to see which department hired the most for (L1-L4)
+low_level_df_2 = df_1[df_1.Level.str.contains('|'.join(search_values_low))]
+----
+
+
++*In[15]:*+
+[source, ipython3]
+----
+low_level_df_2['Department'].value_counts().hvplot.barh(
+    title="Department Hires Low", xlabel='Department', ylabel='Count', 
+    width=500, height=350)
+----
+
+
++*Out[15]:*+
+----
+[[1562]]
+[[a8d3dd3a-5461-4024-ab40-9518d32acdca]]
+----
+
+From the Barh Chart we can hover over the diagram to see the exact
+number of hire in each department.
+
+
++*In[130]:*+
+[source, ipython3]
+----
+# Histogram to see department distribution by levels
+sns.displot(low_level_df_2, x="Level", hue="Department",multiple="stack",height=15,palette='Paired')
+----
+
+
++*Out[130]:*+
+----<seaborn.axisgrid.FacetGrid at 0x15817318f88>
+![png](output_52_1.png)
+----
+
+Low Level Findings: 1. Most L1 hires are Data Scientist 2. Most L2 & L3
+& L4 hires are Product Engineers 3. Most employees fall under the level
+ranking of L2.
+
+*iv) High Level Analysis (LM5-LM7)*
+
+
++*In[16]:*+
+[source, ipython3]
+----
+high_level_df.hvplot.table(columns=['Department', 'Level','Count'], sortable=True, selectable=True,
+                  width=800, height=300)
+----
+
+
++*Out[16]:*+
+----
+[[1683]]
+[[9586e6e8-2d1e-42d3-8b66-164bf67a7b59]]
+----
+
+The High Level Department are evenly spread across the top 5 most
+employed departments. This mean for the top 5 departments, each of them
+have a leader to guide and distribute knowledge for their respective
+field. The only department with average hires that lacks a leader is the
+Marketing Analytics department.
+
+
++*In[17]:*+
+[source, ipython3]
+----
+# Create new Dataframe to see which department hired the most for (L1-L4)
+high_level_df_2 = df_1[df_1.Level.str.contains('|'.join(search_values_high))]
+high_level_df_2['Department'].value_counts().hvplot.barh(
+    title="Department Hires High", xlabel='Department', ylabel='Count', 
+    width=500, height=350)
+----
+
+
++*Out[17]:*+
+----
+[[1721]]
+[[cb21c10d-f949-4611-9522-e43c7f0afad9]]
+----
+
+
++*In[133]:*+
+[source, ipython3]
+----
+# Histogram to see department distribution by levels
+sns.displot(high_level_df_2, x="Level", hue="Department",multiple="stack",height=8,palette='Set2')
+----
+
+
++*Out[133]:*+
+----<seaborn.axisgrid.FacetGrid at 0x1581cbae888>
+![png](output_58_1.png)
+----
+
+High Level Findings 1. There are no Individual Contributors (L5-L7) 2.
+Most high level employees are LM5 3. Marketing Analystics lack a leader
+
+*v) Level v Cost Centers*
+
+
++*In[18]:*+
+[source, ipython3]
+----
+# Creat a new dataframe with the counted values for each level to Cost Center 
+lvc_df = pd.DataFrame({'Count' : df_1.groupby( ["Cost Center", "Level"] ).size()}).reset_index()
+lvc_df.hvplot.table(columns=['Cost Center', 'Level','Count'], sortable=True, selectable=True,
+                  width=800, height=400)
+----
+
+
++*Out[18]:*+
+----
+[[1842]]
+[[dcfba761-172c-4af3-8dfa-a62daab7565a]]
+----
+
+
++*In[19]:*+
+[source, ipython3]
+----
+# Repeating some of the code above for easy visuals
+search_values_low = ['L1','L2','L3','L4']
+low_level_df_c = lvc_df[lvc_df.Level.str.contains('|'.join(search_values_low))]
+search_values_high_c = ['LM5','LM6','LM7']
+high_level_df_c = lvc_df[lvc_df.Level.str.contains('|'.join(search_values_high))]
+----
+
+
++*In[56]:*+
+[source, ipython3]
+----
+for x in lvc_df['Cost Center'].unique():
+    low_high_comparison(x,low_level_df_c,high_level_df_c, 'Cost Center')
+----
+
+
++*Out[56]:*+
+----
+AI & Data Services Low Level Percentage: 91.67
+AI & Data Services High Level Percentage: 8.33
+===========================================
+Engineering Low Level Percentage: 94.74
+Engineering High Level Percentage: 5.26
+===========================================
+Office Management  Low Level Percentage: 87.5
+Office Management  High Level Percentage: 12.5
+===========================================
+Security Low Level Percentage: 94.44
+Security High Level Percentage: 5.56
+===========================================
+----
+
+The Cost Center with the most low level hires is Engineering and the
+most high level hire is Office Management.
+
+*vi) Low Level Analysis (L1-L4)*
+
+
++*In[20]:*+
+[source, ipython3]
+----
+low_level_df_c.hvplot.table(columns=['Cost Center', 'Level','Count'], sortable=True, selectable=True,
+                  width=800, height=400)
+----
+
+
++*Out[20]:*+
+----
+[[1880]]
+[[ad523945-7869-40bf-99f7-4cc2504e4019]]
+----
+
+
++*In[21]:*+
+[source, ipython3]
+----
+# Create new Dataframe to see which department hired the most for (L1-L4)
+low_level_df_3 = df_1[df_1.Level.str.contains('|'.join(search_values_low))]
+low_level_df_3['Cost Center'].value_counts().hvplot.barh(
+    title="Cost Center Hires Low", xlabel='Cost Center', ylabel='Count', 
+    width=500, height=350)
+----
+
+
++*Out[21]:*+
+----
+[[1918]]
+[[64e04f9c-38c8-4863-9404-51cf35d33131]]
+----
+
+
++*In[148]:*+
+[source, ipython3]
+----
+# Histogram to see department distribution by levels
+sns.displot(low_level_df_3, x="Level", hue="Cost Center",multiple="stack",height=15,palette='Paired')
+----
+
+
++*Out[148]:*+
+----<seaborn.axisgrid.FacetGrid at 0x1580b3cc6c8>
+![png](output_68_1.png)
+----
+
+*vii) High Level Analysis (LM5-LM7)*
+
+
++*In[22]:*+
+[source, ipython3]
+----
+high_level_df_c.hvplot.table(columns=['Cost Center', 'Level','Count'], sortable=True, selectable=True,
+                  width=800, height=200)
+----
+
+
++*Out[22]:*+
+----
+[[2039]]
+[[05dec188-c8cb-4c5a-929b-62d7c7dcba63]]
+----
+
+
++*In[23]:*+
+[source, ipython3]
+----
+# Create new Dataframe to see which department hired the most for (LM5-LM7)
+high_level_df_3 = df_1[df_1.Level.str.contains('|'.join(search_values_high))]
+high_level_df_3['Cost Center'].value_counts().hvplot.barh(
+    title="Cost Center Hires High", xlabel='Cost Center', ylabel='Count', 
+    width=500, height=350)
+----
+
+
++*Out[23]:*+
+----
+[[2077]]
+[[94e0ed32-24ab-43a1-9eff-36a3e71cae02]]
+----
+
+
++*In[152]:*+
+[source, ipython3]
+----
+# Histogram to see department distribution by levels
+sns.displot(high_level_df_3, x="Level", hue="Cost Center",multiple="stack",height=15,palette='Paired')
+----
+
+
++*Out[152]:*+
+----<seaborn.axisgrid.FacetGrid at 0x1587fa467c8>
+![png](output_72_1.png)
+----
+
+*2. Data Analysis (Exploring relationships between different variables)*
+
+For this part we will be exploring:
+
+....
+ i. The most effective way to aquire talent 
+ ii. Which hiring source attracts what level of employess
+ iii. Hiring Source Compare to departments 
+ 
+....
+
+*i) The most effective way to acquire talent*
+
+
++*In[25]:*+
+[source, ipython3]
+----
+df = pd.read_csv('People Ops Analyst Test.csv')
+# Copy data file
+df_2 = df
+df_2 = df_2.dropna()
+# Quick check for null values
+df_2.isna().sum()
+----
+
+
++*Out[25]:*+
+----Department           0
+Job Title            0
+Location             0
+Hiring Source        0
+Hire Date            0
+Level                0
+Employment Status    0
+Cost Center          0
+dtype: int64----
+
+
++*In[26]:*+
+[source, ipython3]
+----
+df_2['Hiring Source'].value_counts().hvplot.barh(
+    title="Cost Center Head Counts", xlabel='Cost Center', ylabel='Count', 
+    width=500, height=350)
+----
+
+
++*Out[26]:*+
+----
+[[2198]]
+[[765f1d4c-37b6-48ea-a1a5-f6b2962f59f8]]
+----
+
+if we are spending a lot of money on job portal - inbound, we need to
+rethink our decision
+
+*ii) Which hiring source attracts what level of employess*
+
+
++*In[27]:*+
+[source, ipython3]
+----
+hs_df = pd.DataFrame({'Count' : df_2.groupby( ["Hiring Source", "Level"] ).size()}).reset_index()
+----
+
+
++*In[28]:*+
+[source, ipython3]
+----
+hs_df.hvplot.table(columns=['Hiring Source', 'Level','Count'], sortable=True, selectable=True,
+                  width=800, height=400)
+----
+
+
++*Out[28]:*+
+----
+[[2319]]
+[[a5d3b69b-46a2-4e13-8d77-0a918dec94c1]]
+----
+
+
++*In[171]:*+
+[source, ipython3]
+----
+sns.displot(hs_df, x="Hiring Source", hue="Level",multiple="stack",height=10,palette='Paired')
+----
+
+
++*Out[171]:*+
+----<seaborn.axisgrid.FacetGrid at 0x15821f2da88>
+![png](output_81_1.png)
+----
+
+Findings 1. Most effective method to hire High Level Employees are
+through Referral 2. Jobstreet Hiring Source is the least effective in
+hiring talent and also the worst option to hire high level talent 3.
+This data recorded might not be accurate as there are repetitive
+variables. 4. Most People that got promoted is only from L1 because
+internal hires only consist of L2
+
+*iii) Hiring Source Compare to Departments*
+
+
++*In[29]:*+
+[source, ipython3]
+----
+hsd_df_d = pd.DataFrame({'Count' : df_2.groupby( ["Hiring Source", "Department"] ).size()}).reset_index()
+hsd_df_d.hvplot.table(columns=['Hiring Source', 'Department','Count'], sortable=True, selectable=True,
+                  width=800, height=400)
+----
+
+
++*Out[29]:*+
+----
+[[2357]]
+[[0180f3f0-05ce-41e1-b01e-ac64a2f30ad9]]
+----
+
+
++*In[169]:*+
+[source, ipython3]
+----
+ax = sns.displot(hsd_df_d, x="Hiring Source", hue="Department",multiple="stack",height=15,palette='Paired')
+ax.set_xticklabels(rotation=30)
+----
+
+
++*Out[169]:*+
+----<seaborn.axisgrid.FacetGrid at 0x158224021c8>
+![png](output_85_1.png)
+----
+
+Depending which type of talent we want to hire, we can look at the
+histogram to see which is the most effective way to hire the specific
+individual.
+
+== 📋 Key Findings & Suggestion
+
+*Key Findings* 1. Promotions only happen to people from L1 since
+internal hire only consist of L2 2. Lack of Individual Contributor (L5,
+L6, L7) 3. Lack of leadership in Marketing Analytics Department 4. Most
+Expenses spent is on Engineering and AI cost centers 5. Best Hiring
+Source for high level employees are through referral 6. Job street is
+the worst option when it comes to hiring talent
+
+*Suggestion for Improvement* 1. Since Promotion only happens to people
+from L1, there is a question of whether talented people are leaving the
+company or the promotion criteria is hard to achieve. Suggestion here is
+to explore why talented people are leaving and how do you retain talent
+from leaving.
+
+....
+ 2. The lack of individual contributors raises the question of whether the talent hired are accurate to the leveling framework or the lack of inspirational events in the company. Suggestion here is to encourage employees to take part in leadership event and to train their ability to think out of the box. 
+ 
+ 3. Most expenses are spent on Engineering and hiring Product Engineers, the question we should ask here is whether the ROI is worth the investment? is everyone in the engineering department contributing to the productivity of the company? Suggestion here is to closely monitor everyone's KPI and do a simple ROI calculation to see whether it yields a positive return whether in the short/long term. 
+ 
+ 4. To minimize the budget and time spend recruitng talent, the company should cut of channels that does not yield a positive return and only focus on channels like 'Applied' / 'Referred' / 'Source'. Understand that we cant control the applicants that applied themselves, but the company could spend more time and budget on 'Referred' and 'Source. 
+....
+
+== 📘 Appendix
+
+__________________________
+=== Tools and Libraries Used
+__________________________
+
+[width="100%",cols="34%,33%,33%",options="header",]
+|=======================================================================
+|> |Job |Tools
+|Data Cleaning / Wrangling |Pandas / Excel |Pandas is used to remove
+constant feature columns while Excel is used for sorting / filtering /
+adding Cost Center column / Removing incomplete columns
+
+|Visualization |Bokeh / Matplotlib / Seaborn |Bokeh is used to create
+Bar/Barh/Table Charts while Matplotlib and Seaborn is used to create
+Line Chart for time series and Histograms
+|=======================================================================
+
+__________________________________________________________________________________________
+=== Data Used
+
+[width="100%",cols="34%,33%,33%",options="header",]
+|=======================================================================
+|File Name |File Type |Description
+|People Ops Analyst Test |csv |Used to extract data for exploration and
+analysis
+
+|Levelling Framework |pdf |Used to understand the breakdown of how
+levels work in MoneyLion.
+
+| | |
+|=======================================================================
+____________________________________________________________________________________________
